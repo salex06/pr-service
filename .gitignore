@@ -1,0 +1,78 @@
+# Файлы редактора (VS Code)
+.vscode/
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# Игнорируем все в папке bin (исполняемые файлы)
+/bin/
+
+# Игнорируем все в папке out (артефакты сборки)
+/out/
+
+# Игнорируем временные файлы
+/tmp/
+
+# Файлы зависимостей Go (для модулей)
+vendor/
+
+# Go-специфичные файлы
+# Исполняемые файлы при компиляции
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Тестовые выходные файлы
+*.test
+*.out
+
+# Файлы профилирования
+*.prof
+*.trace
+
+# Файлы сгенерированные go coverage
+*.coverprofile
+coverage.html
+
+# Файлы зависимостей (для старых версий Go)
+/pkg/
+
+# Файлы операционной системы
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# Каталоги для хранения данных IDE
+.idea/
+
+# Файлы конфигурации окружения
+.env
+.env.local
+.env.*.local
+
+# Лог-файлы
+*.log
+logs/
+
+# Резервные копии
+*.bak
+*.backup
+
+# Временные файлы сборки
+/build/
+/dist/
