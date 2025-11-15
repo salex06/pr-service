@@ -106,3 +106,37 @@ func (ts *TeamService) GetTeam(teamID string) (*dto.Team, *dto.ErrorResponse) {
 		},
 	}
 }
+
+// DeactivateAllMembers выполняет перевод в неактивное состояние всех
+// представителей команды с идентификатором teamID
+func (ts *TeamService) DeactivateAllMembers(teamID string) (*dto.Team, *dto.ErrorResponse) {
+	if team, _ := (*ts.teamRepository).GetTeam(context.Background(), teamID); team != nil {
+		members, _ := (*ts.userRepository).GetTeamMembers(context.Background(), team.TeamName)
+
+		for _, v := range members {
+			v.IsActive = false
+			err := (*ts.userRepository).UpdateUser(context.Background(), v)
+			if err != nil {
+				return nil, &dto.ErrorResponse{
+					Status: http.StatusInternalServerError,
+					Error: map[string]string{
+						"code":    "INTERNAL_ERROR",
+						"message": "error occured when updating user",
+					},
+				}
+			}
+		}
+		return &dto.Team{
+			TeamName: team.TeamName,
+			Members:  converter.ConvertUsersToTeamMembers(members),
+		}, nil
+	}
+
+	return nil, &dto.ErrorResponse{
+		Status: http.StatusNotFound,
+		Error: map[string]string{
+			"code":    string(dto.NotFound),
+			"message": "resource not found",
+		},
+	}
+}

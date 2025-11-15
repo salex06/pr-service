@@ -68,6 +68,7 @@ func main() {
 func setupTeamHandlers(handler *rest.TeamHandler, r *gin.Engine) {
 	r.POST("/team/add", handler.HandleAddTeamRequest)
 	r.GET("/team/get", handler.HandleGetTeamRequest)
+	r.POST("/team/deactivateAll", handler.HandleDeactivateAllRequest)
 }
 
 func setupUserHandlers(handler *rest.UserHandler, r *gin.Engine) {

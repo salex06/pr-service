@@ -59,3 +59,17 @@ func (th *TeamHandler) HandleGetTeamRequest(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+// HandleDeactivateAllRequest получает запрос на перевод в неактивное состояние
+// всех представителей команды с названием команды team_name и формирует ответ
+func (th *TeamHandler) HandleDeactivateAllRequest(c *gin.Context) {
+	teamID := c.Query("team_name")
+
+	resp, err := th.teamService.DeactivateAllMembers(teamID)
+	if err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
