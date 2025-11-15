@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/salex06/pr-service/internal/converter"
 	"github.com/salex06/pr-service/internal/dto"
-	"github.com/salex06/pr-service/internal/model"
 	prRepos "github.com/salex06/pr-service/internal/repos/pr"
 	revsRepos "github.com/salex06/pr-service/internal/repos/reviewers"
 	userRepos "github.com/salex06/pr-service/internal/repos/user"
@@ -33,8 +33,7 @@ func (us *UserService) SetIsActive(req *dto.UserShort) (*dto.User, *dto.ErrorRes
 		user.IsActive = req.IsActive
 		(*us.userRepository).UpdateUser(context.Background(), user)
 
-		//TODO: лучше сделать конвертер
-		return (*dto.User)(user), nil
+		return converter.ConvertUserModelToDto(user), nil
 	}
 
 	return nil, &dto.ErrorResponse{
@@ -51,7 +50,7 @@ func (us *UserService) GetAssignedPRs(userId string) (*dto.AssignedPullRequests,
 		prIds, _ := (*us.assignedRevsRepository).GetAssignedPullRequestIds(context.Background(), userId)
 		prs, _ := (*us.pullRequestRepository).GetPullRequests(context.Background(), prIds)
 
-		return us.convertToAssignedPRs(userId, prs), nil
+		return converter.ConvertPRsToAssignedPRs(userId, prs), nil
 	}
 
 	//В API не прописана данная ветка
@@ -62,28 +61,4 @@ func (us *UserService) GetAssignedPRs(userId string) (*dto.AssignedPullRequests,
 			"message": "resource not found",
 		},
 	}
-}
-
-func (us *UserService) convertToAssignedPRs(userId string, prs []*model.PullRequest) *dto.AssignedPullRequests {
-	pullRequestsShort := us.convertToShortPullRequests(prs)
-
-	return &dto.AssignedPullRequests{
-		UserId:       userId,
-		PullRequests: pullRequestsShort,
-	}
-}
-
-func (us *UserService) convertToShortPullRequests(prs []*model.PullRequest) []dto.PullRequestShort {
-	converted := make([]dto.PullRequestShort, 0, len(prs))
-
-	for _, v := range prs {
-		converted = append(converted, dto.PullRequestShort{
-			PullRequestId:   v.PullRequestId,
-			PullRequestName: v.PullRequestName,
-			AuthorId:        v.AuthorId,
-			Status:          v.Status,
-		})
-	}
-
-	return converted
 }

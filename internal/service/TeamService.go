@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/salex06/pr-service/internal/converter"
 	"github.com/salex06/pr-service/internal/dto"
 	"github.com/salex06/pr-service/internal/model"
 	teamRepos "github.com/salex06/pr-service/internal/repos/team"
@@ -60,34 +61,8 @@ func (ts *TeamService) saveMembers(req *dto.Team) {
 
 			(*ts.userRepository).UpdateUser(context.Background(), userFromDb)
 		} else {
-			(*ts.userRepository).SaveUser(context.Background(), ts.convertTeamMemberToUser(member, teamName))
+			(*ts.userRepository).SaveUser(context.Background(), converter.ConvertTeamMemberToUser(member, teamName))
 		}
-	}
-}
-
-func (ts *TeamService) convertTeamMemberToUser(member *dto.TeamMember, teamName string) *model.User {
-	return &model.User{
-		UserId:   member.UserId,
-		Username: member.Username,
-		TeamName: teamName,
-		IsActive: member.IsActive,
-	}
-}
-
-func (ts *TeamService) convertUsersToTeamMembers(users []*model.User) []*dto.TeamMember {
-	converted := make([]*dto.TeamMember, 0, len(users))
-	for _, user := range users {
-		converted = append(converted, ts.convertUserToTeamMember(user))
-	}
-
-	return converted
-}
-
-func (ts *TeamService) convertUserToTeamMember(user *model.User) *dto.TeamMember {
-	return &dto.TeamMember{
-		UserId:   user.UserId,
-		Username: user.Username,
-		IsActive: user.IsActive,
 	}
 }
 
@@ -96,7 +71,7 @@ func (ts *TeamService) GetTeam(teamId string) (*dto.Team, *dto.ErrorResponse) {
 		members, _ := (*ts.userRepository).GetTeamMembers(context.Background(), team.TeamName)
 		return &dto.Team{
 			TeamName: team.TeamName,
-			Members:  ts.convertUsersToTeamMembers(members),
+			Members:  converter.ConvertUsersToTeamMembers(members),
 		}, nil
 	}
 

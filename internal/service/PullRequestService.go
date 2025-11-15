@@ -7,6 +7,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/salex06/pr-service/internal/converter"
 	"github.com/salex06/pr-service/internal/dto"
 	"github.com/salex06/pr-service/internal/model"
 	prRepos "github.com/salex06/pr-service/internal/repos/pr"
@@ -75,7 +76,7 @@ func (svc *PullRequestService) CreatePullRequest(req *dto.CreatePullRequest) (*d
 		AssignedReviewers: make([]string, 0, dto.MAX_ASSIGNED_REVIEWERS),
 	}
 	reviewerIds, _ := (*svc.userRepo).ChooseReviewers(context.Background(), prAuthor)
-	(*svc.prRepo).SavePullRequest(context.Background(), svc.convertDtoToPr(pullRequest))
+	(*svc.prRepo).SavePullRequest(context.Background(), converter.ConvertDtoToPr(pullRequest))
 	svc.assignReviewers(pullRequest, reviewerIds)
 
 	return pullRequest, nil
@@ -87,17 +88,6 @@ func (svc *PullRequestService) assignReviewers(pullRequest *dto.PullRequest, rev
 	}
 
 	pullRequest.AssignedReviewers = append(pullRequest.AssignedReviewers, reviewers...)
-}
-
-func (svc *PullRequestService) convertDtoToPr(pr *dto.PullRequest) *model.PullRequest {
-	return &model.PullRequest{
-		PullRequestId:   pr.PullRequestId,
-		PullRequestName: pr.PullRequestName,
-		AuthorId:        pr.AuthorId,
-		Status:          pr.Status,
-		CreatedAt:       pr.CreatedAt,
-		MergedAt:        pr.MergedAt,
-	}
 }
 
 func (svc *PullRequestService) MergePullRequest(req *dto.MergePullRequest) (*dto.PullRequest, *dto.ErrorResponse) {
@@ -114,7 +104,7 @@ func (svc *PullRequestService) MergePullRequest(req *dto.MergePullRequest) (*dto
 
 	reviewers, _ := (*svc.revsRepo).GetAssignedReviewersIds(context.Background(), pullRequest.PullRequestId)
 	if pullRequest.Status == model.MERGED {
-		return svc.convertPrToDto(pullRequest, reviewers), nil
+		return converter.ConvertPrToDto(pullRequest, reviewers), nil
 	}
 
 	pullRequest.MergedAt = new(time.Time)
@@ -122,19 +112,7 @@ func (svc *PullRequestService) MergePullRequest(req *dto.MergePullRequest) (*dto
 	pullRequest.Status = model.MERGED
 	(*svc.prRepo).UpdatePullRequest(context.Background(), pullRequest)
 
-	return svc.convertPrToDto(pullRequest, reviewers), nil
-}
-
-func (svc *PullRequestService) convertPrToDto(pr *model.PullRequest, reviewers []string) *dto.PullRequest {
-	return &dto.PullRequest{
-		PullRequestId:     pr.PullRequestId,
-		PullRequestName:   pr.PullRequestName,
-		AuthorId:          pr.AuthorId,
-		Status:            pr.Status,
-		AssignedReviewers: reviewers,
-		CreatedAt:         pr.CreatedAt,
-		MergedAt:          pr.MergedAt,
-	}
+	return converter.ConvertPrToDto(pullRequest, reviewers), nil
 }
 
 func (svc *PullRequestService) ReassignPullRequest(req *dto.ReassignPullRequest) (*dto.ReassignPrResponse, *dto.ErrorResponse) {
@@ -195,20 +173,5 @@ func (svc *PullRequestService) ReassignPullRequest(req *dto.ReassignPullRequest)
 	(*svc.revsRepo).CreateAssignment(context.Background(), *reassignedReviewerId, pr.PullRequestId)
 
 	reviewers, _ = (*svc.revsRepo).GetAssignedReviewersIds(context.Background(), pr.PullRequestId)
-	return svc.convertPrToReassigningDto(pr, reviewers, *reassignedReviewerId), nil
-}
-
-func (svc *PullRequestService) convertPrToReassigningDto(pr *model.PullRequest, reviewers []string, replacedBy string) *dto.ReassignPrResponse {
-	return &dto.ReassignPrResponse{
-		Pr: dto.PullRequest{
-			PullRequestId:     pr.PullRequestId,
-			PullRequestName:   pr.PullRequestName,
-			AuthorId:          pr.AuthorId,
-			Status:            pr.Status,
-			AssignedReviewers: reviewers,
-			CreatedAt:         pr.CreatedAt,
-			MergedAt:          pr.MergedAt,
-		},
-		ReplacedBy: replacedBy,
-	}
+	return converter.ConvertPrToReassigningDto(pr, reviewers, *reassignedReviewerId), nil
 }
