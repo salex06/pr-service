@@ -22,8 +22,6 @@ func (uh *UserHandler) HandleSetIsActiveRequest(c *gin.Context) {
 	var req dto.UserShort
 	c.ShouldBindBodyWithJSON(&req)
 
-	//TODO: middleware для проверки админского токена
-
 	resp, err := uh.userService.SetIsActive(&req)
 	if err != nil {
 		c.JSON(err.Status, err)

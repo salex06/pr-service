@@ -14,7 +14,7 @@ type DB struct {
 	Pool *pgxpool.Pool
 }
 
-func NewDB(cfg *config.Config) (*DB, error) {
+func NewDB(cfg *config.DbConfig) (*DB, error) {
 	connString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		cfg.DBUser,

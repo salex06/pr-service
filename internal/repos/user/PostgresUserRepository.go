@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/salex06/pr-service/internal/database"
+	"github.com/salex06/pr-service/internal/dto"
 	"github.com/salex06/pr-service/internal/model"
 )
 
@@ -14,7 +15,7 @@ type PostgresUserRepository struct {
 	db *database.DB
 }
 
-func NewPostgresUserRepository(db *database.DB) *PostgresUserRepository {
+func NewPostgresUserRepository(db *database.DB) UserRepository {
 	return &PostgresUserRepository{db: db}
 }
 
@@ -133,10 +134,10 @@ func (repo *PostgresUserRepository) ChooseReviewers(ctx context.Context, prAutho
 		SELECT user_id FROM users
 		WHERE is_active AND team_name=$1 AND user_id != $2
 		ORDER BY RANDOM() 
-		LIMIT 2;
+		LIMIT $3;
 	`
 
-	rows, err := repo.db.Pool.Query(ctx, query, prAuthor.TeamName, prAuthor.UserId)
+	rows, err := repo.db.Pool.Query(ctx, query, prAuthor.TeamName, prAuthor.UserId, dto.MAX_ASSIGNED_REVIEWERS)
 	if err != nil {
 		return nil, fmt.Errorf("failed to choose reviewers: %w", err)
 	}

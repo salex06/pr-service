@@ -46,6 +46,7 @@ func (svc *PullRequestService) CreatePullRequest(req *dto.CreatePullRequest) (*d
 			},
 		}
 	}
+
 	if exists, _ := (*svc.teamRepo).TeamExists(context.Background(), prAuthor.TeamName); !exists {
 		return nil, &dto.ErrorResponse{
 			Status: http.StatusNotFound,
@@ -194,10 +195,10 @@ func (svc *PullRequestService) ReassignPullRequest(req *dto.ReassignPullRequest)
 	(*svc.revsRepo).CreateAssignment(context.Background(), *reassignedReviewerId, pr.PullRequestId)
 
 	reviewers, _ = (*svc.revsRepo).GetAssignedReviewersIds(context.Background(), pr.PullRequestId)
-	return svc.convertPrToReassingDto(pr, reviewers, *reassignedReviewerId), nil
+	return svc.convertPrToReassigningDto(pr, reviewers, *reassignedReviewerId), nil
 }
 
-func (svc *PullRequestService) convertPrToReassingDto(pr *model.PullRequest, reviewers []string, replacedBy string) *dto.ReassignPrResponse {
+func (svc *PullRequestService) convertPrToReassigningDto(pr *model.PullRequest, reviewers []string, replacedBy string) *dto.ReassignPrResponse {
 	return &dto.ReassignPrResponse{
 		Pr: dto.PullRequest{
 			PullRequestId:     pr.PullRequestId,

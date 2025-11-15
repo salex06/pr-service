@@ -11,7 +11,7 @@ type PostgresAssignedRevsRepository struct {
 	db *database.DB
 }
 
-func NewPostgresAssignedRevsRepository(db *database.DB) *PostgresAssignedRevsRepository {
+func NewPostgresAssignedRevsRepository(db *database.DB) AssignedRevsRepository {
 	return &PostgresAssignedRevsRepository{db: db}
 }
 
@@ -31,7 +31,7 @@ func (repo *PostgresAssignedRevsRepository) GetAssignedPullRequestIds(ctx contex
 	var prIds []string
 	for rows.Next() {
 		var prId string
-		if err := rows.Scan(prId); err != nil {
+		if err := rows.Scan(&prId); err != nil {
 			return nil, fmt.Errorf("failed to get team members: %w", err)
 		}
 		prIds = append(prIds, prId)

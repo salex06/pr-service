@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/salex06/pr-service/internal/config"
 	"github.com/salex06/pr-service/internal/database"
 	prRepo "github.com/salex06/pr-service/internal/repos/pr"
@@ -15,48 +16,60 @@ import (
 	"github.com/salex06/pr-service/internal/service"
 )
 
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+}
+
 func main() {
-	dbConfig := config.Load()
+	dbConfig := config.LoadDbConfig()
+	appConfig := config.LoadAppConfig()
+
+	//Подключение к БД
 	db, err := database.NewDB(dbConfig)
 	if err != nil {
 		log.Println(fmt.Errorf("connecting to database failed: %w", err))
 		return
 	}
 
-	var tr teamRepo.TeamRepository = teamRepo.NewPostgresTeamRepository(db)
-	var ur userRepo.UserRepository = userRepo.NewPostgresUserRepository(db)
-	var ar revsRepo.AssignedRevsRepository = revsRepo.NewPostgresAssignedRevsRepository(db)
-	var pr prRepo.PullRequestRepository = prRepo.NewPostgresPullRequestRepository(db)
+	//Инициализация и внедрение компонентов приложения
+	teamRepo := teamRepo.NewPostgresTeamRepository(db)
+	userRepo := userRepo.NewPostgresUserRepository(db)
+	revsRepo := revsRepo.NewPostgresAssignedRevsRepository(db)
+	pullRequestRepo := prRepo.NewPostgresPullRequestRepository(db)
 
-	var ts *service.TeamService = service.NewTeamService(&tr, &ur)
-	var us *service.UserService = service.NewUserService(&ur, &ar, &pr)
-	var prs *service.PullRequestService = service.NewPullRequestService(&pr, &ar, &ur, &tr)
+	teamService := service.NewTeamService(&teamRepo, &userRepo)
+	userService := service.NewUserService(&userRepo, &revsRepo, &pullRequestRepo)
+	pullRequestService := service.NewPullRequestService(&pullRequestRepo, &revsRepo, &userRepo, &teamRepo)
 
-	var th *rest.TeamHandler = rest.NewTeamHandler(ts)
-	var uh *rest.UserHandler = rest.NewUserHandler(us)
-	var prh *rest.PullRequestHandler = rest.NewPullRequestHandler(prs)
+	teamHandler := rest.NewTeamHandler(teamService)
+	userHandler := rest.NewUserHandler(userService)
+	pullRequestHandler := rest.NewPullRequestHandler(pullRequestService)
 
 	r := gin.Default()
 
-	setupTeamHandlers(th, r)
-	setupUserHandlers(uh, r)
-	setupPullRequestHandlers(prh, r)
+	//Настройка эндпоинтов
+	setupTeamHandlers(teamHandler, r)
+	setupUserHandlers(userHandler, r)
+	setupPullRequestHandlers(pullRequestHandler, r)
 
-	r.Run(":8080")
+	//Запуск сервера
+	r.Run(fmt.Sprintf(":%s", appConfig.ServerPort))
 }
 
-func setupTeamHandlers(th *rest.TeamHandler, r *gin.Engine) {
-	r.POST("/team/add", th.HandleAddTeamRequest)
-	r.GET("/team/get", th.HandleGetTeamRequest)
+func setupTeamHandlers(handler *rest.TeamHandler, r *gin.Engine) {
+	r.POST("/team/add", handler.HandleAddTeamRequest)
+	r.GET("/team/get", handler.HandleGetTeamRequest)
 }
 
-func setupUserHandlers(uh *rest.UserHandler, r *gin.Engine) {
-	r.POST("/users/setIsActive", uh.HandleSetIsActiveRequest)
-	r.GET("/users/getReview", uh.HandleGetReviewRequest)
+func setupUserHandlers(handler *rest.UserHandler, r *gin.Engine) {
+	r.POST("/users/setIsActive", handler.HandleSetIsActiveRequest)
+	r.GET("/users/getReview", handler.HandleGetReviewRequest)
 }
 
-func setupPullRequestHandlers(prh *rest.PullRequestHandler, r *gin.Engine) {
-	r.POST("/pullRequest/create", prh.HandleCreateRequest)
-	r.POST("/pullRequest/merge", prh.HandleMergeRequest)
-	r.POST("/pullRequest/reassign", prh.HandleReassignRequest)
+func setupPullRequestHandlers(handler *rest.PullRequestHandler, r *gin.Engine) {
+	r.POST("/pullRequest/create", handler.HandleCreateRequest)
+	r.POST("/pullRequest/merge", handler.HandleMergeRequest)
+	r.POST("/pullRequest/reassign", handler.HandleReassignRequest)
 }

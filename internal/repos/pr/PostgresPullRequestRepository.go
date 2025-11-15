@@ -14,7 +14,7 @@ type PostgresPullRequestRepository struct {
 	db *database.DB
 }
 
-func NewPostgresPullRequestRepository(db *database.DB) *PostgresPullRequestRepository {
+func NewPostgresPullRequestRepository(db *database.DB) PullRequestRepository {
 	return &PostgresPullRequestRepository{db: db}
 }
 

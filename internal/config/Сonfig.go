@@ -1,13 +1,10 @@
 package config
 
 import (
-	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
-type Config struct {
+type DbConfig struct {
 	DBHost     string
 	DBPort     string
 	DBUser     string
@@ -15,17 +12,23 @@ type Config struct {
 	DBName     string
 }
 
-func Load() *Config {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
-	}
+type AppConfig struct {
+	ServerPort string
+}
 
-	return &Config{
+func LoadDbConfig() *DbConfig {
+	return &DbConfig{
 		DBHost:     getEnv("POSTGRES_HOST", "localhost"),
 		DBPort:     getEnv("POSTGRES_PORT", "5433"),
 		DBUser:     getEnv("POSTGRES_USER", "pr-service-admin"),
 		DBPassword: getEnv("POSTGRES_PASSWORD", ""),
 		DBName:     getEnv("POSTGRES_DB", "postgres"),
+	}
+}
+
+func LoadAppConfig() *AppConfig {
+	return &AppConfig{
+		ServerPort: getEnv("SERVER_PORT", "8080"),
 	}
 }
 

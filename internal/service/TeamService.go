@@ -36,33 +36,33 @@ func (ts *TeamService) AddTeam(req *dto.Team) (*dto.Team, *dto.ErrorResponse) {
 		}
 	}
 
-	team := &model.Team{
-		TeamName: teamName,
-	}
+	team := &model.Team{TeamName: teamName}
 	(*ts.teamRepository).SaveTeam(context.Background(), team)
 
+	ts.saveMembers(req)
+
+	return &dto.Team{
+		TeamName: team.TeamName,
+		Members:  req.Members,
+	}, nil
+}
+
+func (ts *TeamService) saveMembers(req *dto.Team) {
+	teamName := req.TeamName
+
 	for _, member := range req.Members {
-		var savedUser *model.User
 		if userFromDb, _ := (*ts.userRepository).GetUser(context.Background(), member.UserId); userFromDb != nil {
 			// WARN: при создании команды для существующего человека обновляются его поля: teamName, username, isActive
+
 			userFromDb.TeamName = teamName
 			userFromDb.Username = member.Username
 			userFromDb.IsActive = member.IsActive
-			savedUser = userFromDb
 
-			(*ts.userRepository).UpdateUser(context.Background(), savedUser)
+			(*ts.userRepository).UpdateUser(context.Background(), userFromDb)
 		} else {
-			savedUser = ts.convertTeamMemberToUser(member, teamName)
-
-			(*ts.userRepository).SaveUser(context.Background(), savedUser)
+			(*ts.userRepository).SaveUser(context.Background(), ts.convertTeamMemberToUser(member, teamName))
 		}
 	}
-
-	members, _ := (*ts.userRepository).GetTeamMembers(context.Background(), teamName)
-	return &dto.Team{
-		TeamName: team.TeamName,
-		Members:  ts.convertUsersToTeamMembers(members),
-	}, nil
 }
 
 func (ts *TeamService) convertTeamMemberToUser(member *dto.TeamMember, teamName string) *model.User {
@@ -101,7 +101,7 @@ func (ts *TeamService) GetTeam(teamId string) (*dto.Team, *dto.ErrorResponse) {
 	}
 
 	return nil, &dto.ErrorResponse{
-		Status: 404,
+		Status: http.StatusNotFound,
 		Error: map[string]string{
 			"code":    string(dto.NOT_FOUND),
 			"message": "resource not found",

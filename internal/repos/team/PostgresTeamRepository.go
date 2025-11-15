@@ -14,7 +14,7 @@ type PostgresTeamRepository struct {
 	db *database.DB
 }
 
-func NewPostgresTeamRepository(db *database.DB) *PostgresTeamRepository {
+func NewPostgresTeamRepository(db *database.DB) TeamRepository {
 	return &PostgresTeamRepository{db: db}
 }
 
