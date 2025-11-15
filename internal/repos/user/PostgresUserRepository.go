@@ -111,6 +111,41 @@ func (repo *PostgresUserRepository) UserExists(ctx context.Context, userID strin
 	return exists, err
 }
 
+// GetTotalUserCount обращается к БД и возвращает
+// общее количество пользователей
+func (repo *PostgresUserRepository) GetTotalUserCount(ctx context.Context) (int, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM users
+	`
+
+	var count int
+	err := repo.db.Pool.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get users count: %w", err)
+	}
+
+	return count, nil
+}
+
+// GetActiveUserCount обращается к БД и возвращает
+// количество активных пользователей
+func (repo *PostgresUserRepository) GetActiveUserCount(ctx context.Context) (int, error) {
+	query := `
+		SELECT COUNT(*) 
+		FROM users
+		WHERE is_active
+	`
+
+	var count int
+	err := repo.db.Pool.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get active users count: %w", err)
+	}
+
+	return count, nil
+}
+
 // GetTeamMembers выполняет запрос к БД и возвращает
 // сотрудников, которые являются членами заданной команды
 func (repo *PostgresUserRepository) GetTeamMembers(ctx context.Context, teamName string) ([]*entity.User, error) {
@@ -140,6 +175,32 @@ func (repo *PostgresUserRepository) GetTeamMembers(ctx context.Context, teamName
 	}
 
 	return members, nil
+}
+
+// GetUserCountByTeam выполняет запрос к БД и возвращает
+// количество пользователей в каждой команде
+func (repo *PostgresUserRepository) GetUserCountByTeam(ctx context.Context) ([]*dto.TeamSize, error) {
+	query := `
+		SELECT team_name, COUNT(*)
+		FROM users
+		GROUP BY team_name;
+	`
+	rows, err := repo.db.Pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to group users by teams: %w", err)
+	}
+	defer rows.Close()
+
+	teamSizes := make([]*dto.TeamSize, 0)
+	for rows.Next() {
+		var teamSize dto.TeamSize
+		if err := rows.Scan(&teamSize.TeamName, &teamSize.UserCount); err != nil {
+			return nil, fmt.Errorf("failed to group users by teams: %w", err)
+		}
+		teamSizes = append(teamSizes, &teamSize)
+	}
+
+	return teamSizes, nil
 }
 
 // ChooseReviewers выполняет запрос к БД и возвращает

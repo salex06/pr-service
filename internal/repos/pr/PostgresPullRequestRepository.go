@@ -128,3 +128,39 @@ func (repo *PostgresPullRequestRepository) UpdatePullRequest(ctx context.Context
 
 	return nil
 }
+
+// GetOpenedPullRequestCount выполняет запрос к БД для
+// получения числа PR в статусе OPEN
+func (repo *PostgresPullRequestRepository) GetOpenedPullRequestCount(ctx context.Context) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM pull_requests
+		WHERE pr_status = 'OPEN'
+	`
+
+	var count int
+	err := repo.db.Pool.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get open PR count: %w", err)
+	}
+
+	return count, nil
+}
+
+// GetMergedPullRequestCount выполняет запрос к БД для
+// получения числа PR в статусе MERGED
+func (repo *PostgresPullRequestRepository) GetMergedPullRequestCount(ctx context.Context) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM pull_requests
+		WHERE pr_status = 'MERGED'
+	`
+
+	var count int
+	err := repo.db.Pool.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get merged PR count: %w", err)
+	}
+
+	return count, nil
+}

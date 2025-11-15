@@ -75,3 +75,20 @@ func (repo *PostgresTeamRepository) GetTeam(ctx context.Context, teamName string
 
 	return &team, nil
 }
+
+// GetTeamCount выполняет запрос к БД для
+// получения общего количества команд
+func (repo *PostgresTeamRepository) GetTeamCount(ctx context.Context) (int, error) {
+	query := `
+		SELECT COUNT(*)
+		FROM teams
+	`
+
+	var count int
+	err := repo.db.Pool.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get team count: %w", err)
+	}
+
+	return count, nil
+}

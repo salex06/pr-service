@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/salex06/pr-service/internal/dto"
 	"github.com/salex06/pr-service/internal/entity"
 )
 
@@ -100,4 +101,41 @@ func (db *InMemoryUserRepository) GetTeamMembers(ctx context.Context, teamName s
 		}
 	}
 	return members, nil
+}
+
+// GetTotalUserCount возвращает общее количество пользователей
+func (db *InMemoryUserRepository) GetTotalUserCount(ctx context.Context) (int, error) {
+	return len(db.storage), nil
+}
+
+// GetActiveUserCount возвращает количество активных пользователей
+func (db *InMemoryUserRepository) GetActiveUserCount(ctx context.Context) (int, error) {
+	count := 0
+
+	for _, v := range db.storage {
+		if v.IsActive {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
+// GetUserCountByTeam выполняет запрос к БД и возвращает
+// количество пользователей в каждой команде
+func (db *InMemoryUserRepository) GetUserCountByTeam(ctx context.Context) ([]*dto.TeamSize, error) {
+	temp := make(map[string]int, 0)
+	for _, v := range db.storage {
+		temp[v.TeamName]++
+	}
+
+	teamSizes := make([]*dto.TeamSize, 0, len(temp))
+	for k, v := range temp {
+		teamSizes = append(teamSizes, &dto.TeamSize{
+			TeamName:  k,
+			UserCount: v,
+		})
+	}
+
+	return teamSizes, nil
 }

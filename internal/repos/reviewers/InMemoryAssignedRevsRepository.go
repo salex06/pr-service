@@ -3,6 +3,8 @@ package reviewers
 import (
 	"context"
 	"slices"
+
+	"github.com/salex06/pr-service/internal/dto"
 )
 
 // InMemoryAssignedRevsRepository представляет собой компонент,
@@ -48,4 +50,18 @@ func (repo *InMemoryAssignedRevsRepository) DeleteAssignment(ctx context.Context
 	repo.storageRev[prID] = slices.DeleteFunc(repo.storageRev[prID], func(currUserId string) bool { return currUserId == userID })
 
 	return nil
+}
+
+// GetAssignmentsCountByReviewerID возвращает набор пар
+// "идентификатор ревьюера - количество назначений на PR данного пользователя"
+func (repo *InMemoryAssignedRevsRepository) GetAssignmentsCountByReviewerID(ctx context.Context) ([]*dto.AssignmentsByUser, error) {
+	assignmentsByUsers := make([]*dto.AssignmentsByUser, 0, len(repo.storage))
+	for k, v := range repo.storage {
+		assignmentsByUsers = append(assignmentsByUsers, &dto.AssignmentsByUser{
+			UserID:           k,
+			AssignmentsCount: len(v),
+		})
+	}
+
+	return assignmentsByUsers, nil
 }

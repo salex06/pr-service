@@ -14,4 +14,6 @@ type TeamRepository interface {
 	TeamExists(ctx context.Context, teamName string) (bool, error)
 	SaveTeam(ctx context.Context, team *entity.Team) error
 	GetTeam(ctx context.Context, teamName string) (*entity.Team, error)
+
+	GetTeamCount(ctx context.Context) (int, error)
 }

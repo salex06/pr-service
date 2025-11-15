@@ -43,10 +43,12 @@ func main() {
 	teamService := service.NewTeamService(&teamRepo, &userRepo)
 	userService := service.NewUserService(&userRepo, &revsRepo, &pullRequestRepo)
 	pullRequestService := service.NewPullRequestService(&pullRequestRepo, &revsRepo, &userRepo, &teamRepo)
+	statService := service.NewStatsService(&pullRequestRepo, &revsRepo, &userRepo, &teamRepo)
 
 	teamHandler := rest.NewTeamHandler(teamService)
 	userHandler := rest.NewUserHandler(userService)
 	pullRequestHandler := rest.NewPullRequestHandler(pullRequestService)
+	statsHandler := rest.NewStatHandler(statService)
 
 	r := gin.Default()
 
@@ -54,6 +56,7 @@ func main() {
 	setupTeamHandlers(teamHandler, r)
 	setupUserHandlers(userHandler, r)
 	setupPullRequestHandlers(pullRequestHandler, r)
+	setupStatRequestHandlers(statsHandler, r)
 
 	// Запуск сервера
 	err = r.Run(fmt.Sprintf(":%s", appConfig.ServerPort))
@@ -76,4 +79,8 @@ func setupPullRequestHandlers(handler *rest.PullRequestHandler, r *gin.Engine) {
 	r.POST("/pullRequest/create", handler.HandleCreateRequest)
 	r.POST("/pullRequest/merge", handler.HandleMergeRequest)
 	r.POST("/pullRequest/reassign", handler.HandleReassignRequest)
+}
+
+func setupStatRequestHandlers(handler *rest.StatsHandler, r *gin.Engine) {
+	r.GET("/stats", handler.HandleGetStatsRequest)
 }

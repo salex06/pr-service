@@ -18,4 +18,7 @@ type PullRequestRepository interface {
 
 	SavePullRequest(ctx context.Context, pr *entity.PullRequest) error
 	UpdatePullRequest(ctx context.Context, pr *entity.PullRequest) error
+
+	GetOpenedPullRequestCount(ctx context.Context) (int, error)
+	GetMergedPullRequestCount(ctx context.Context) (int, error)
 }

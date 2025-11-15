@@ -5,6 +5,7 @@ package user
 import (
 	"context"
 
+	"github.com/salex06/pr-service/internal/dto"
 	"github.com/salex06/pr-service/internal/entity"
 )
 
@@ -16,7 +17,11 @@ type UserRepository interface {
 	SaveUser(ctx context.Context, user *entity.User) error
 	UserExists(ctx context.Context, userID string) (bool, error)
 
+	GetTotalUserCount(ctx context.Context) (int, error)
+	GetActiveUserCount(ctx context.Context) (int, error)
+
 	GetTeamMembers(ctx context.Context, teamName string) ([]*entity.User, error)
+	GetUserCountByTeam(ctx context.Context) ([]*dto.TeamSize, error)
 
 	ChooseReviewers(ctx context.Context, prAuthor *entity.User) ([]string, error)
 	ReassignReviewer(ctx context.Context, teamName string, idsExclusionList []string) (*string, error)

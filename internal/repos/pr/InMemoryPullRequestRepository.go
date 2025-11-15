@@ -55,3 +55,25 @@ func (repo *InMemoryPullRequestRepository) UpdatePullRequest(ctx context.Context
 	repo.storage[pr.PullRequestID] = pr
 	return nil
 }
+
+// GetOpenedPullRequestCount возвращает число PR в статусе OPEN
+func (repo *InMemoryPullRequestRepository) GetOpenedPullRequestCount(ctx context.Context) (int, error) {
+	count := 0
+	for _, v := range repo.storage {
+		if v.Status == entity.OPEN {
+			count++
+		}
+	}
+	return count, nil
+}
+
+// GetMergedPullRequestCount возвращает число PR в статусе MERGED
+func (repo *InMemoryPullRequestRepository) GetMergedPullRequestCount(ctx context.Context) (int, error) {
+	count := 0
+	for _, v := range repo.storage {
+		if v.Status == entity.MERGED {
+			count++
+		}
+	}
+	return count, nil
+}

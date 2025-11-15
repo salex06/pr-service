@@ -37,3 +37,8 @@ func (db *InMemoryTeamRepository) SaveTeam(ctx context.Context, team *entity.Tea
 func (db *InMemoryTeamRepository) GetTeam(ctx context.Context, teamName string) (*entity.Team, error) {
 	return db.storage[teamName], nil
 }
+
+// GetTeamCount возвращает общее количество команд
+func (db *InMemoryTeamRepository) GetTeamCount(ctx context.Context) (int, error) {
+	return len(db.storage), nil
+}

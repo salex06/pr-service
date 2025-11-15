@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/salex06/pr-service/internal/database"
+	"github.com/salex06/pr-service/internal/dto"
 )
 
 // PostgresAssignedRevsRepository представляет собой компонент,
@@ -71,6 +72,33 @@ func (repo *PostgresAssignedRevsRepository) GetAssignedReviewersIds(ctx context.
 	}
 
 	return revIds, nil
+}
+
+// GetAssignmentsCountByReviewerID выполняет запрос к БД для
+// получения набора пар "идентификатор ревьюера - количество назначений на PR данного пользователя"
+func (repo *PostgresAssignedRevsRepository) GetAssignmentsCountByReviewerID(ctx context.Context) ([]*dto.AssignmentsByUser, error) {
+	query := `
+		SELECT user_id, COUNT (*)
+		FROM assigned_reviewers
+		GROUP BY user_id
+	`
+
+	rows, err := repo.db.Pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to group assignments count by user: %w", err)
+	}
+	defer rows.Close()
+
+	assignmentsByUsers := make([]*dto.AssignmentsByUser, 0)
+	for rows.Next() {
+		var currRow dto.AssignmentsByUser
+		if err := rows.Scan(&currRow.UserID, &currRow.AssignmentsCount); err != nil {
+			return nil, fmt.Errorf("failed to group assignments count by user: %w", err)
+		}
+		assignmentsByUsers = append(assignmentsByUsers, &currRow)
+	}
+
+	return assignmentsByUsers, nil
 }
 
 // CreateAssignment выполняет запрос к БД для
