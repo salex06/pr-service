@@ -6,41 +6,50 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+
 	"github.com/salex06/pr-service/internal/database"
-	"github.com/salex06/pr-service/internal/model"
+	"github.com/salex06/pr-service/internal/entity"
 )
 
+// PostgresPullRequestRepository представляет собой компонент,
+// отвечающий за взаимодействие с БД PostgreSQL, где
+// содержится информация о PR's
 type PostgresPullRequestRepository struct {
 	db *database.DB
 }
 
+// NewPostgresPullRequestRepository конструирует и возвращает объект PostgresPullRequestRepository
 func NewPostgresPullRequestRepository(db *database.DB) PullRequestRepository {
 	return &PostgresPullRequestRepository{db: db}
 }
 
-func (repo *PostgresPullRequestRepository) PullRequestExists(ctx context.Context, prId string) (bool, error) {
+// PullRequestExists выполняет запрос для проверки
+// наличия в БД PR с заданным идентификатором
+func (repo *PostgresPullRequestRepository) PullRequestExists(ctx context.Context, prIВ string) (bool, error) {
 	var exists bool
 	query := `
 		SELECT EXISTS(SELECT 1 FROM pull_requests WHERE pull_request_id = $1)
 	`
 
-	err := repo.db.Pool.QueryRow(ctx, query, prId).Scan(&exists)
+	err := repo.db.Pool.QueryRow(ctx, query, prIВ).Scan(&exists)
 
 	return exists, err
 }
 
-func (repo *PostgresPullRequestRepository) GetPullRequest(ctx context.Context, prId string) (*model.PullRequest, error) {
+// GetPullRequest выполняет запрос к БД для получения
+// PR с заданным идентификатором (nil - если не найден)
+func (repo *PostgresPullRequestRepository) GetPullRequest(ctx context.Context, prID string) (*entity.PullRequest, error) {
 	query := `
 		SELECT pull_request_id, pull_request_name, author_id, pr_status, created_at, merged_at 
 		FROM pull_requests
 		WHERE pull_request_id = $1
 	`
 
-	var pr model.PullRequest
-	err := repo.db.Pool.QueryRow(ctx, query, prId).Scan(
-		&pr.PullRequestId,
+	var pr entity.PullRequest
+	err := repo.db.Pool.QueryRow(ctx, query, prID).Scan(
+		&pr.PullRequestID,
 		&pr.PullRequestName,
-		&pr.AuthorId,
+		&pr.AuthorID,
 		&pr.Status,
 		&pr.CreatedAt,
 		&pr.MergedAt,
@@ -57,8 +66,9 @@ func (repo *PostgresPullRequestRepository) GetPullRequest(ctx context.Context, p
 	return &pr, nil
 }
 
-func (repo *PostgresPullRequestRepository) GetPullRequests(ctx context.Context, prIds []string) ([]*model.PullRequest, error) {
-	prs := make([]*model.PullRequest, 0, len(prIds))
+// GetPullRequests возвращает набор объектов PR's по заданному набору идентификаторов
+func (repo *PostgresPullRequestRepository) GetPullRequests(ctx context.Context, prIds []string) ([]*entity.PullRequest, error) {
+	prs := make([]*entity.PullRequest, 0, len(prIds))
 	for _, id := range prIds {
 		if pr, _ := repo.GetPullRequest(context.Background(), id); pr != nil {
 			prs = append(prs, pr)
@@ -68,16 +78,17 @@ func (repo *PostgresPullRequestRepository) GetPullRequests(ctx context.Context, 
 	return prs, nil
 }
 
-func (repo *PostgresPullRequestRepository) SavePullRequest(ctx context.Context, pr *model.PullRequest) error {
+// SavePullRequest сохраняет PR в БД
+func (repo *PostgresPullRequestRepository) SavePullRequest(ctx context.Context, pr *entity.PullRequest) error {
 	query := `
 		INSERT INTO pull_requests (pull_request_id, pull_request_name, author_id, pr_status, created_at, merged_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := repo.db.Pool.Exec(ctx, query,
-		pr.PullRequestId,
+		pr.PullRequestID,
 		pr.PullRequestName,
-		pr.AuthorId, pr.Status,
+		pr.AuthorID, pr.Status,
 		pr.CreatedAt,
 		pr.MergedAt,
 	)
@@ -89,7 +100,9 @@ func (repo *PostgresPullRequestRepository) SavePullRequest(ctx context.Context, 
 	return nil
 }
 
-func (repo *PostgresPullRequestRepository) UpdatePullRequest(ctx context.Context, pr *model.PullRequest) error {
+// UpdatePullRequest выполняет запрос к БД для обновления
+// изменяемой информации о PR
+func (repo *PostgresPullRequestRepository) UpdatePullRequest(ctx context.Context, pr *entity.PullRequest) error {
 	query := `
 		UPDATE pull_requests 
 		SET pull_request_name = $1, author_id = $2, pr_status = $3, created_at = $4, merged_at = $5
@@ -98,11 +111,11 @@ func (repo *PostgresPullRequestRepository) UpdatePullRequest(ctx context.Context
 
 	result, err := repo.db.Pool.Exec(ctx, query,
 		pr.PullRequestName,
-		pr.AuthorId,
+		pr.AuthorID,
 		string(pr.Status),
 		pr.CreatedAt,
 		pr.MergedAt,
-		pr.PullRequestId,
+		pr.PullRequestID,
 	)
 
 	if err != nil {

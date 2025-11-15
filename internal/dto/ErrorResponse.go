@@ -1,17 +1,23 @@
 package dto
 
+// ErrorCode представляет тип,
+// определяющий возможную ошибку при
+// обработке запроса
 type ErrorCode string
 
+// Константы, определяющие тип ошибки
 const (
-	TEAM_EXISTS  ErrorCode = "TEAM_EXISTS"
-	PR_EXISTS    ErrorCode = "PR_EXISTS"
-	PR_MERGED    ErrorCode = "PR_MERGED"
-	NOT_ASSIGNED ErrorCode = "NOT_ASSIGNED"
-	NO_CANDIDATE ErrorCode = "NO_CANDIDATE"
-	NOT_FOUND    ErrorCode = "NOT_FOUND"
+	TeamExists  ErrorCode = "TEAM_EXISTS"
+	PrExists    ErrorCode = "PR_EXISTS"
+	PrMerged    ErrorCode = "PR_MERGED"
+	NotAssigned ErrorCode = "NOT_ASSIGNED"
+	NoCandidate ErrorCode = "NO_CANDIDATE"
+	NotFound    ErrorCode = "NOT_FOUND"
 )
 
+// ErrorResponse определяет структуру ответа
+// на запрос, обработка которого завершилась неудачно
 type ErrorResponse struct {
 	Status int               `json:"-"`
-	Error  map[string]string `json:"error"` //code-message
+	Error  map[string]string `json:"error"` // code-message
 }

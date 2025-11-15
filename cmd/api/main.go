@@ -6,12 +6,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
 	"github.com/salex06/pr-service/internal/config"
 	"github.com/salex06/pr-service/internal/database"
-	prRepo "github.com/salex06/pr-service/internal/repos/pr"
-	revsRepo "github.com/salex06/pr-service/internal/repos/reviewers"
-	teamRepo "github.com/salex06/pr-service/internal/repos/team"
-	userRepo "github.com/salex06/pr-service/internal/repos/user"
+	prRepository "github.com/salex06/pr-service/internal/repos/pr"
+	revsRepository "github.com/salex06/pr-service/internal/repos/reviewers"
+	teamRepository "github.com/salex06/pr-service/internal/repos/team"
+	userRepository "github.com/salex06/pr-service/internal/repos/user"
 	"github.com/salex06/pr-service/internal/rest"
 	"github.com/salex06/pr-service/internal/service"
 )
@@ -23,21 +24,21 @@ func init() {
 }
 
 func main() {
-	dbConfig := config.LoadDbConfig()
+	dbConfig := config.LoadDBConfig()
 	appConfig := config.LoadAppConfig()
 
-	//Подключение к БД
+	// Подключение к БД
 	db, err := database.NewDB(dbConfig)
 	if err != nil {
 		log.Println(fmt.Errorf("connecting to database failed: %w", err))
 		return
 	}
 
-	//Инициализация и внедрение компонентов приложения
-	teamRepo := teamRepo.NewPostgresTeamRepository(db)
-	userRepo := userRepo.NewPostgresUserRepository(db)
-	revsRepo := revsRepo.NewPostgresAssignedRevsRepository(db)
-	pullRequestRepo := prRepo.NewPostgresPullRequestRepository(db)
+	// Инициализация и внедрение компонентов приложения
+	teamRepo := teamRepository.NewPostgresTeamRepository(db)
+	userRepo := userRepository.NewPostgresUserRepository(db)
+	revsRepo := revsRepository.NewPostgresAssignedRevsRepository(db)
+	pullRequestRepo := prRepository.NewPostgresPullRequestRepository(db)
 
 	teamService := service.NewTeamService(&teamRepo, &userRepo)
 	userService := service.NewUserService(&userRepo, &revsRepo, &pullRequestRepo)
@@ -49,13 +50,16 @@ func main() {
 
 	r := gin.Default()
 
-	//Настройка эндпоинтов
+	// Настройка эндпоинтов
 	setupTeamHandlers(teamHandler, r)
 	setupUserHandlers(userHandler, r)
 	setupPullRequestHandlers(pullRequestHandler, r)
 
-	//Запуск сервера
-	r.Run(fmt.Sprintf(":%s", appConfig.ServerPort))
+	// Запуск сервера
+	err = r.Run(fmt.Sprintf(":%s", appConfig.ServerPort))
+	if err != nil {
+		log.Printf("unable to start server: %s\n", err)
+	}
 }
 
 func setupTeamHandlers(handler *rest.TeamHandler, r *gin.Engine) {

@@ -1,3 +1,4 @@
+// Package database - пакет в котором хранятся структуры, отвечающие за подключение к БД
 package database
 
 import (
@@ -7,14 +8,19 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/salex06/pr-service/internal/config"
 )
 
+// DB представляет собой структуру,
+// хранящую пул соединений к БД PostgreSQL
 type DB struct {
 	Pool *pgxpool.Pool
 }
 
-func NewDB(cfg *config.DbConfig) (*DB, error) {
+// NewDB конструирует на основе конфига
+// соединение к БД и возвращает объект DB
+func NewDB(cfg *config.DBConfig) (*DB, error) {
 	connString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s",
 		cfg.DBUser,
@@ -45,6 +51,7 @@ func NewDB(cfg *config.DbConfig) (*DB, error) {
 	return &DB{Pool: pool}, nil
 }
 
+// Close закрывает соединение с БД
 func (db *DB) Close() {
 	if db.Pool != nil {
 		db.Pool.Close()

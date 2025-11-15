@@ -1,7 +1,10 @@
 package dto
 
+// User является формой представления сущности User
+// с уникальным идентификатором, именем, названием команды
+// и флагом активности
 type User struct {
-	UserId   string `json:"user_id"`
+	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	TeamName string `json:"team_name"`
 	IsActive bool   `json:"is_active"`

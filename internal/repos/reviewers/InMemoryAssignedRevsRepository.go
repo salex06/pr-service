@@ -5,11 +5,15 @@ import (
 	"slices"
 )
 
+// InMemoryAssignedRevsRepository представляет собой компонент,
+// отвечающий за взаимодействие с in-memory хранилищем (map),
+// где находится информация о назначениях сотрудников на PR's
 type InMemoryAssignedRevsRepository struct {
-	storage    map[string][]string //userId - []pullRequestIds
-	storageRev map[string][]string //pullRequestId - []userIds
+	storage    map[string][]string // userId - []pullRequestIds
+	storageRev map[string][]string // pullRequestId - []userIds
 }
 
+// NewInMemoryAssignedRevsRepository конструирует и возвращает объект InMemoryAssignedRevsRepository
 func NewInMemoryAssignedRevsRepository() *InMemoryAssignedRevsRepository {
 	return &InMemoryAssignedRevsRepository{
 		storage:    make(map[string][]string),
@@ -17,23 +21,31 @@ func NewInMemoryAssignedRevsRepository() *InMemoryAssignedRevsRepository {
 	}
 }
 
-func (repo *InMemoryAssignedRevsRepository) GetAssignedPullRequestIds(ctx context.Context, userId string) ([]string, error) {
-	return repo.storage[userId], nil
+// GetAssignedPullRequestIds возвращает слайс идентификаторов
+// PR`s, на которые назначен сотрудник с идентификатором userID
+func (repo *InMemoryAssignedRevsRepository) GetAssignedPullRequestIds(ctx context.Context, userID string) ([]string, error) {
+	return repo.storage[userID], nil
 }
 
-func (repo *InMemoryAssignedRevsRepository) CreateAssignment(ctx context.Context, userId string, prId string) error {
-	repo.storage[userId] = append(repo.storage[userId], prId)
-	repo.storageRev[prId] = append(repo.storageRev[prId], userId)
+// CreateAssignment сохраняет назначение сотрудника с
+// идентификатором userID на PR с идентификатором prID
+func (repo *InMemoryAssignedRevsRepository) CreateAssignment(ctx context.Context, userID, prID string) error {
+	repo.storage[userID] = append(repo.storage[userID], prID)
+	repo.storageRev[prID] = append(repo.storageRev[prID], userID)
 	return nil
 }
 
-func (repo *InMemoryAssignedRevsRepository) GetAssignedReviewersIds(ctx context.Context, prId string) ([]string, error) {
-	return repo.storageRev[prId], nil
+// GetAssignedReviewersIds возвращает слайс идентификаторов
+// сотрудников, которые назначены на PR с идентификатором prID
+func (repo *InMemoryAssignedRevsRepository) GetAssignedReviewersIds(ctx context.Context, prID string) ([]string, error) {
+	return repo.storageRev[prID], nil
 }
 
-func (repo *InMemoryAssignedRevsRepository) DeleteAssignment(ctx context.Context, userId string, prId string) error {
-	repo.storage[userId] = slices.DeleteFunc(repo.storage[userId], func(currPrId string) bool { return prId == currPrId })
-	repo.storageRev[prId] = slices.DeleteFunc(repo.storageRev[prId], func(currUserId string) bool { return currUserId == userId })
+// DeleteAssignment удаляет назначение сотрудника
+// с идентификатором userID на PR с идентификатором prID
+func (repo *InMemoryAssignedRevsRepository) DeleteAssignment(ctx context.Context, userID, prID string) error {
+	repo.storage[userID] = slices.DeleteFunc(repo.storage[userID], func(currPrId string) bool { return prID == currPrId })
+	repo.storageRev[prID] = slices.DeleteFunc(repo.storageRev[prID], func(currUserId string) bool { return currUserId == userID })
 
 	return nil
 }

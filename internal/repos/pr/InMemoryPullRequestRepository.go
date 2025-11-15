@@ -3,25 +3,31 @@ package pr
 import (
 	"context"
 
-	"github.com/salex06/pr-service/internal/model"
+	"github.com/salex06/pr-service/internal/entity"
 )
 
+// InMemoryPullRequestRepository представляет собой компонент,
+// отвечающий за взаимодействие с in-memory хранилищем (map),
+// где содержится информация о PR's
 type InMemoryPullRequestRepository struct {
-	storage map[string]*model.PullRequest
+	storage map[string]*entity.PullRequest
 }
 
+// NewInMemoryPullRequestRepository конструирует и возвращает объект InMemoryPullRequestRepository
 func NewInMemoryPullRequestRepository() *InMemoryPullRequestRepository {
 	return &InMemoryPullRequestRepository{
-		storage: make(map[string]*model.PullRequest),
+		storage: make(map[string]*entity.PullRequest),
 	}
 }
 
-func (repo *InMemoryPullRequestRepository) GetPullRequest(ctx context.Context, prId string) (*model.PullRequest, error) {
-	return repo.storage[prId], nil
+// GetPullRequest возвращает PR с заданным идентификатором (nil - если не найден)
+func (repo *InMemoryPullRequestRepository) GetPullRequest(ctx context.Context, prID string) (*entity.PullRequest, error) {
+	return repo.storage[prID], nil
 }
 
-func (repo *InMemoryPullRequestRepository) GetPullRequests(ctx context.Context, prIds []string) ([]*model.PullRequest, error) {
-	prs := make([]*model.PullRequest, 0, len(prIds))
+// GetPullRequests возвращает набор PR's по заданному набору идентификаторов
+func (repo *InMemoryPullRequestRepository) GetPullRequests(ctx context.Context, prIds []string) ([]*entity.PullRequest, error) {
+	prs := make([]*entity.PullRequest, 0, len(prIds))
 	for _, v := range prIds {
 		if pr, err := repo.GetPullRequest(ctx, v); err == nil {
 			prs = append(prs, pr)
@@ -30,17 +36,22 @@ func (repo *InMemoryPullRequestRepository) GetPullRequests(ctx context.Context, 
 	return prs, nil
 }
 
-func (repo *InMemoryPullRequestRepository) PullRequestExists(ctx context.Context, prId string) (bool, error) {
-	_, ok := repo.storage[prId]
+// PullRequestExists выполняет проверку наличия PR
+// с заданным идентификатором в хранилище и возвращает результат
+func (repo *InMemoryPullRequestRepository) PullRequestExists(ctx context.Context, prID string) (bool, error) {
+	_, ok := repo.storage[prID]
 	return ok, nil
 }
 
-func (repo *InMemoryPullRequestRepository) SavePullRequest(ctx context.Context, pr *model.PullRequest) error {
-	repo.storage[pr.PullRequestId] = pr
+// SavePullRequest выполняет сохранение PR в хранилище
+func (repo *InMemoryPullRequestRepository) SavePullRequest(ctx context.Context, pr *entity.PullRequest) error {
+	repo.storage[pr.PullRequestID] = pr
 	return nil
 }
 
-func (repo *InMemoryPullRequestRepository) UpdatePullRequest(ctx context.Context, pr *model.PullRequest) error {
-	repo.storage[pr.PullRequestId] = pr
+// UpdatePullRequest выполняет обновление PR
+// (для данной реализации идентично SavePullRequest)
+func (repo *InMemoryPullRequestRepository) UpdatePullRequest(ctx context.Context, pr *entity.PullRequest) error {
+	repo.storage[pr.PullRequestID] = pr
 	return nil
 }

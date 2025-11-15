@@ -1,28 +1,35 @@
+// Package converter - пакет, определяющий функции для преобразования одних структур в другие
 package converter
 
 import (
 	"github.com/salex06/pr-service/internal/dto"
-	"github.com/salex06/pr-service/internal/model"
+	"github.com/salex06/pr-service/internal/entity"
 )
 
-func ConvertTeamMemberToUser(member *dto.TeamMember, teamName string) *model.User {
-	return &model.User{
-		UserId:   member.UserId,
+// ConvertTeamMemberToUser преобразовывает форму представления TeamMember
+// и название команды в сущность User
+func ConvertTeamMemberToUser(member *dto.TeamMember, teamName string) *entity.User {
+	return &entity.User{
+		UserID:   member.UserID,
 		Username: member.Username,
 		TeamName: teamName,
 		IsActive: member.IsActive,
 	}
 }
 
-func ConvertUserToTeamMember(user *model.User) *dto.TeamMember {
+// ConvertUserToTeamMember преобразовывает сущность User
+// в форму представления сущности - TeamMember
+func ConvertUserToTeamMember(user *entity.User) *dto.TeamMember {
 	return &dto.TeamMember{
-		UserId:   user.UserId,
+		UserID:   user.UserID,
 		Username: user.Username,
 		IsActive: user.IsActive,
 	}
 }
 
-func ConvertUsersToTeamMembers(users []*model.User) []*dto.TeamMember {
+// ConvertUsersToTeamMembers преобразовывает слайс сущностей User
+// в слайс объектов формы представления TeamMember
+func ConvertUsersToTeamMembers(users []*entity.User) []*dto.TeamMember {
 	converted := make([]*dto.TeamMember, 0, len(users))
 	for _, user := range users {
 		converted = append(converted, ConvertUserToTeamMember(user))
@@ -31,31 +38,37 @@ func ConvertUsersToTeamMembers(users []*model.User) []*dto.TeamMember {
 	return converted
 }
 
-func ConvertUserModelToDto(user *model.User) *dto.User {
+// ConvertUserEntityToDto преобразовывает сущность User
+// в форму представления User
+func ConvertUserEntityToDto(user *entity.User) *dto.User {
 	return &dto.User{
-		UserId:   user.UserId,
+		UserID:   user.UserID,
 		Username: user.Username,
 		TeamName: user.TeamName,
 		IsActive: user.IsActive,
 	}
 }
 
-func ConvertDtoToPr(pr *dto.PullRequest) *model.PullRequest {
-	return &model.PullRequest{
-		PullRequestId:   pr.PullRequestId,
+// ConvertPrDtoToPrEntity преобразовывает форму представления PullRequest
+// в сущность PullRequest
+func ConvertPrDtoToPrEntity(pr *dto.PullRequest) *entity.PullRequest {
+	return &entity.PullRequest{
+		PullRequestID:   pr.PullRequestID,
 		PullRequestName: pr.PullRequestName,
-		AuthorId:        pr.AuthorId,
+		AuthorID:        pr.AuthorID,
 		Status:          pr.Status,
 		CreatedAt:       pr.CreatedAt,
 		MergedAt:        pr.MergedAt,
 	}
 }
 
-func ConvertPrToDto(pr *model.PullRequest, reviewers []string) *dto.PullRequest {
+// ConvertPrToDto преобразовывает сущность PullRequest и список
+// назначенных ревьюеров в форму представления PullRequest
+func ConvertPrToDto(pr *entity.PullRequest, reviewers []string) *dto.PullRequest {
 	return &dto.PullRequest{
-		PullRequestId:     pr.PullRequestId,
+		PullRequestID:     pr.PullRequestID,
 		PullRequestName:   pr.PullRequestName,
-		AuthorId:          pr.AuthorId,
+		AuthorID:          pr.AuthorID,
 		Status:            pr.Status,
 		AssignedReviewers: reviewers,
 		CreatedAt:         pr.CreatedAt,
@@ -63,12 +76,15 @@ func ConvertPrToDto(pr *model.PullRequest, reviewers []string) *dto.PullRequest 
 	}
 }
 
-func ConvertPrToReassigningDto(pr *model.PullRequest, reviewers []string, replacedBy string) *dto.ReassignPrResponse {
+// ConvertPrToReassigningDto преобразовывает сущность PR,
+// назначенных ревьюеров и идентификатором вновь назначенного сотрудника
+// в структуру ReassignPrResponce
+func ConvertPrToReassigningDto(pr *entity.PullRequest, reviewers []string, replacedBy string) *dto.ReassignPrResponse {
 	return &dto.ReassignPrResponse{
 		Pr: dto.PullRequest{
-			PullRequestId:     pr.PullRequestId,
+			PullRequestID:     pr.PullRequestID,
 			PullRequestName:   pr.PullRequestName,
-			AuthorId:          pr.AuthorId,
+			AuthorID:          pr.AuthorID,
 			Status:            pr.Status,
 			AssignedReviewers: reviewers,
 			CreatedAt:         pr.CreatedAt,
@@ -78,23 +94,28 @@ func ConvertPrToReassigningDto(pr *model.PullRequest, reviewers []string, replac
 	}
 }
 
-func ConvertPRsToAssignedPRs(userId string, prs []*model.PullRequest) *dto.AssignedPullRequests {
+// ConvertPRsToAssignedPRs преобразовывает набор сущностей PullRequest,
+// на которые назначен сотрудник с идентификатором userID, в структуру
+// AssignedPullRequests
+func ConvertPRsToAssignedPRs(userID string, prs []*entity.PullRequest) *dto.AssignedPullRequests {
 	pullRequestsShort := ConvertPrToShortPr(prs)
 
 	return &dto.AssignedPullRequests{
-		UserId:       userId,
+		UserID:       userID,
 		PullRequests: pullRequestsShort,
 	}
 }
 
-func ConvertPrToShortPr(prs []*model.PullRequest) []dto.PullRequestShort {
+// ConvertPrToShortPr преобразовывает сущность PullRequest
+// в его краткую форму представления PullRequestShort
+func ConvertPrToShortPr(prs []*entity.PullRequest) []dto.PullRequestShort {
 	converted := make([]dto.PullRequestShort, 0, len(prs))
 
 	for _, v := range prs {
 		converted = append(converted, dto.PullRequestShort{
-			PullRequestId:   v.PullRequestId,
+			PullRequestID:   v.PullRequestID,
 			PullRequestName: v.PullRequestName,
-			AuthorId:        v.AuthorId,
+			AuthorID:        v.AuthorID,
 			Status:          v.Status,
 		})
 	}

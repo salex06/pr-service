@@ -1,0 +1,107 @@
+version: "2"
+run:
+  timeout: 3m
+  modules-download-mode: readonly
+
+formatters:
+  enable:
+    - gofmt
+    - goimports 
+    - golines 
+
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/salex06/pr-service
+
+    golines:
+      max-len: 150
+
+linters:
+  disable-all: true
+  enable: 
+    - govet
+    - staticcheck
+    - unused
+
+    - prealloc
+    - ineffassign
+
+    - revive
+    - gocritic
+    - gocyclo
+
+    - errcheck
+    - gosec
+
+    - nilerr
+  settings:
+    staticcheck:
+      go: "1.25.1"
+      checks : ["all"]
+
+    unused:
+      check-exported: false
+    
+    
+    prealloc:
+      simple: true          
+      range-loops: true     
+      for-loops: false    
+
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - disableStutteringCheck
+        - name: error-strings      
+        - name: error-return       
+        
+        - name: receiver-naming
+        - name: indent-error-flow
+        - name: confusing-results
+        - name: blank-imports    
+        - name: context-as-argument
+    
+        - name: range-val-address    
+        - name: waitgroup-by-value   
+
+    gocritic:
+      enabled-tags:
+        - performance    
+        - style          
+        - diagnostic     
+        - opinionated    
+      
+      disabled-tags:
+        - experimental    
+
+    gocyclo:
+      min-complexity: 15  
+    
+    errcheck:
+      check-type-assertions: false   
+      check-blank: false             
+      exclude: |
+        # Функции, которые можно безопасно игнорировать
+        (fmt\.Printf?|fmt\.Println)$
+        (*bytes\.Buffer)\.Write
+        (*strings\.Builder)\.Write
+        (*os\.File)\.Close
+        (*io\.Writer)\.Write
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  exclude-rules:
+    - path: _test\.go$
+      linters:
+        - gosec           
+        - funlen          
+        - gocyclo         
+        - dupl
+
+output:
+  print-issued-lines: true
+  colors: always

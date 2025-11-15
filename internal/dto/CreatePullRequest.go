@@ -1,7 +1,10 @@
 package dto
 
+// CreatePullRequest представляет структуру запроса
+// на создание PR с уникальным идентификатором,
+// именем и идентификатором автора
 type CreatePullRequest struct {
-	PullRequestId   string `json:"pull_request_id"`
+	PullRequestID   string `json:"pull_request_id"`
 	PullRequestName string `json:"pull_request_name"`
-	AuthorId        string `json:"author_id"`
+	AuthorID        string `json:"author_id"`
 }

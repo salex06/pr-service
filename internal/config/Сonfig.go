@@ -1,10 +1,13 @@
+// Package config - пакет, в котором хранятся структуры конфигурации приложения
 package config
 
 import (
 	"os"
 )
 
-type DbConfig struct {
+// DBConfig представляет набор параметров,
+// определяющих конфигурацию базы данных
+type DBConfig struct {
 	DBHost     string
 	DBPort     string
 	DBUser     string
@@ -12,12 +15,16 @@ type DbConfig struct {
 	DBName     string
 }
 
+// AppConfig представляет набор параметров,
+// определяющих конфигурацию приложения
 type AppConfig struct {
 	ServerPort string
 }
 
-func LoadDbConfig() *DbConfig {
-	return &DbConfig{
+// LoadDBConfig формирует конфигурацию БД
+// на основе переменных окружения
+func LoadDBConfig() *DBConfig {
+	return &DBConfig{
 		DBHost:     getEnv("POSTGRES_HOST", "localhost"),
 		DBPort:     getEnv("POSTGRES_PORT", "5433"),
 		DBUser:     getEnv("POSTGRES_USER", "pr-service-admin"),
@@ -26,6 +33,8 @@ func LoadDbConfig() *DbConfig {
 	}
 }
 
+// LoadAppConfig формирует конфигурацию приложения
+// на основе переменных окружения
 func LoadAppConfig() *AppConfig {
 	return &AppConfig{
 		ServerPort: getEnv("SERVER_PORT", "8080"),
