@@ -1,10 +1,13 @@
 package team
 
-import "github.com/salex06/pr-service/internal/model"
+import (
+	"context"
+
+	"github.com/salex06/pr-service/internal/model"
+)
 
 type TeamRepository interface {
-	TeamExists(teamName string) bool
-	SaveTeam(team *model.Team) *model.Team
-	DeleteMember(teamName string, memberId string)
-	GetTeam(teamName string) *model.Team
+	TeamExists(ctx context.Context, teamName string) (bool, error)
+	SaveTeam(ctx context.Context, team *model.Team) error
+	GetTeam(ctx context.Context, teamName string) (*model.Team, error)
 }

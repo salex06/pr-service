@@ -1,6 +1,10 @@
 package team
 
-import "github.com/salex06/pr-service/internal/model"
+import (
+	"context"
+
+	"github.com/salex06/pr-service/internal/model"
+)
 
 type InMemoryTeamRepository struct {
 	storage map[string]*model.Team
@@ -12,31 +16,17 @@ func NewInMemoryTeamRepository() *InMemoryTeamRepository {
 	}
 }
 
-func (db *InMemoryTeamRepository) TeamExists(teamName string) bool {
+func (db *InMemoryTeamRepository) TeamExists(ctx context.Context, teamName string) (bool, error) {
 	_, ok := db.storage[teamName]
-	return ok
+	return ok, nil
 }
 
-func (db *InMemoryTeamRepository) SaveTeam(team *model.Team) *model.Team {
+func (db *InMemoryTeamRepository) SaveTeam(ctx context.Context, team *model.Team) error {
 	db.storage[team.TeamName] = team
 
-	return db.storage[team.TeamName]
+	return nil
 }
 
-func (db *InMemoryTeamRepository) DeleteMember(teamName string, userId string) {
-	for k, v := range db.storage {
-		if k == teamName {
-			sl := make([]*model.User, 0, len(v.Members))
-			for j := range v.Members {
-				if v.Members[j].UserId != userId {
-					sl = append(sl, v.Members[j])
-				}
-			}
-			v.Members = sl
-		}
-	}
-}
-
-func (db *InMemoryTeamRepository) GetTeam(teamName string) *model.Team {
-	return db.storage[teamName]
+func (db *InMemoryTeamRepository) GetTeam(ctx context.Context, teamName string) (*model.Team, error) {
+	return db.storage[teamName], nil
 }

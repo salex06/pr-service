@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"slices"
@@ -35,8 +36,17 @@ func NewPullRequestService(
 }
 
 func (svc *PullRequestService) CreatePullRequest(req *dto.CreatePullRequest) (*dto.PullRequest, *dto.ErrorResponse) {
-	prAuthor := (*svc.userRepo).GetUser(req.AuthorId)
-	if prAuthor == nil || !(*svc.teamRepo).TeamExists(prAuthor.TeamName) {
+	prAuthor, _ := (*svc.userRepo).GetUser(context.Background(), req.AuthorId)
+	if prAuthor == nil {
+		return nil, &dto.ErrorResponse{
+			Status: http.StatusNotFound,
+			Error: map[string]string{
+				"code":    string(dto.NOT_FOUND),
+				"message": "resource not found",
+			},
+		}
+	}
+	if exists, _ := (*svc.teamRepo).TeamExists(context.Background(), prAuthor.TeamName); !exists {
 		return nil, &dto.ErrorResponse{
 			Status: http.StatusNotFound,
 			Error: map[string]string{
@@ -46,7 +56,7 @@ func (svc *PullRequestService) CreatePullRequest(req *dto.CreatePullRequest) (*d
 		}
 	}
 
-	if (*svc.prRepo).PullRequestExists(req.PullRequestId) {
+	if exists, _ := (*svc.prRepo).PullRequestExists(context.TODO(), req.PullRequestId); exists {
 		return nil, &dto.ErrorResponse{
 			Status: http.StatusConflict,
 			Error: map[string]string{
@@ -63,16 +73,16 @@ func (svc *PullRequestService) CreatePullRequest(req *dto.CreatePullRequest) (*d
 		Status:            model.OPEN,
 		AssignedReviewers: make([]string, 0, dto.MAX_ASSIGNED_REVIEWERS),
 	}
-	reviewerIds := (*svc.userRepo).ChooseReviewers(prAuthor)
+	reviewerIds, _ := (*svc.userRepo).ChooseReviewers(context.Background(), prAuthor)
+	(*svc.prRepo).SavePullRequest(context.Background(), svc.convertDtoToPr(pullRequest))
 	svc.assignReviewers(pullRequest, reviewerIds)
-	(*svc.prRepo).SavePullRequest(svc.convertDtoToPr(pullRequest))
 
 	return pullRequest, nil
 }
 
 func (svc *PullRequestService) assignReviewers(pullRequest *dto.PullRequest, reviewers []string) {
 	for _, revId := range reviewers {
-		(*svc.revsRepo).CreateAssignment(revId, pullRequest.PullRequestId)
+		(*svc.revsRepo).CreateAssignment(context.Background(), revId, pullRequest.PullRequestId)
 	}
 
 	pullRequest.AssignedReviewers = append(pullRequest.AssignedReviewers, reviewers...)
@@ -84,13 +94,13 @@ func (svc *PullRequestService) convertDtoToPr(pr *dto.PullRequest) *model.PullRe
 		PullRequestName: pr.PullRequestName,
 		AuthorId:        pr.AuthorId,
 		Status:          pr.Status,
-		CreatedAt:       *pr.CreatedAt,
-		MergedAt:        *pr.MergedAt,
+		CreatedAt:       pr.CreatedAt,
+		MergedAt:        pr.MergedAt,
 	}
 }
 
 func (svc *PullRequestService) MergePullRequest(req *dto.MergePullRequest) (*dto.PullRequest, *dto.ErrorResponse) {
-	pullRequest := (*svc.prRepo).GetPullRequest(req.PullRequestId)
+	pullRequest, _ := (*svc.prRepo).GetPullRequest(context.Background(), req.PullRequestId)
 	if pullRequest == nil {
 		return nil, &dto.ErrorResponse{
 			Status: http.StatusNotFound,
@@ -101,13 +111,15 @@ func (svc *PullRequestService) MergePullRequest(req *dto.MergePullRequest) (*dto
 		}
 	}
 
-	reviewers := (*svc.revsRepo).GetAssignedReviewersIds(pullRequest.PullRequestId)
+	reviewers, _ := (*svc.revsRepo).GetAssignedReviewersIds(context.Background(), pullRequest.PullRequestId)
 	if pullRequest.Status == model.MERGED {
 		return svc.convertPrToDto(pullRequest, reviewers), nil
 	}
 
-	pullRequest.MergedAt = time.Now()
-	(*svc.prRepo).UpdatePullRequest(pullRequest)
+	pullRequest.MergedAt = new(time.Time)
+	*pullRequest.MergedAt = time.Now()
+	pullRequest.Status = model.MERGED
+	(*svc.prRepo).UpdatePullRequest(context.Background(), pullRequest)
 
 	return svc.convertPrToDto(pullRequest, reviewers), nil
 }
@@ -119,14 +131,14 @@ func (svc *PullRequestService) convertPrToDto(pr *model.PullRequest, reviewers [
 		AuthorId:          pr.AuthorId,
 		Status:            pr.Status,
 		AssignedReviewers: reviewers,
-		CreatedAt:         &pr.CreatedAt,
-		MergedAt:          &pr.MergedAt,
+		CreatedAt:         pr.CreatedAt,
+		MergedAt:          pr.MergedAt,
 	}
 }
 
 func (svc *PullRequestService) ReassignPullRequest(req *dto.ReassignPullRequest) (*dto.ReassignPrResponse, *dto.ErrorResponse) {
-	pr := (*svc.prRepo).GetPullRequest(req.PullRequestId)
-	userToReplace := (*svc.userRepo).GetUser(req.OldReviewerId)
+	pr, _ := (*svc.prRepo).GetPullRequest(context.Background(), req.PullRequestId)
+	userToReplace, _ := (*svc.userRepo).GetUser(context.Background(), req.OldReviewerId)
 
 	if pr == nil || userToReplace == nil {
 		return nil, &dto.ErrorResponse{
@@ -148,7 +160,7 @@ func (svc *PullRequestService) ReassignPullRequest(req *dto.ReassignPullRequest)
 		}
 	}
 
-	reviewers := (*svc.revsRepo).GetAssignedReviewersIds(pr.PullRequestId)
+	reviewers, _ := (*svc.revsRepo).GetAssignedReviewersIds(context.Background(), pr.PullRequestId)
 	if !slices.Contains(reviewers, userToReplace.UserId) {
 		return nil, &dto.ErrorResponse{
 			Status: http.StatusConflict,
@@ -159,7 +171,15 @@ func (svc *PullRequestService) ReassignPullRequest(req *dto.ReassignPullRequest)
 		}
 	}
 
-	reassignedReviewerId := (*svc.userRepo).ReassignReviewer(userToReplace.TeamName, []string{pr.AuthorId, userToReplace.UserId})
+	idsExclusionList := make([]string, 0, len(reviewers)+1)
+	idsExclusionList = append(idsExclusionList, reviewers...)
+	idsExclusionList = append(idsExclusionList, pr.AuthorId)
+
+	reassignedReviewerId, _ := (*svc.userRepo).ReassignReviewer(
+		context.Background(),
+		userToReplace.TeamName,
+		idsExclusionList,
+	)
 	if reassignedReviewerId == nil {
 		return nil, &dto.ErrorResponse{
 			Status: http.StatusConflict,
@@ -170,10 +190,10 @@ func (svc *PullRequestService) ReassignPullRequest(req *dto.ReassignPullRequest)
 		}
 	}
 
-	(*svc.revsRepo).DeleteAssignment(userToReplace.UserId, pr.PullRequestId)
-	(*svc.revsRepo).CreateAssignment(*reassignedReviewerId, pr.PullRequestId)
+	(*svc.revsRepo).DeleteAssignment(context.Background(), userToReplace.UserId, pr.PullRequestId)
+	(*svc.revsRepo).CreateAssignment(context.Background(), *reassignedReviewerId, pr.PullRequestId)
 
-	reviewers = (*svc.revsRepo).GetAssignedReviewersIds(pr.PullRequestId)
+	reviewers, _ = (*svc.revsRepo).GetAssignedReviewersIds(context.Background(), pr.PullRequestId)
 	return svc.convertPrToReassingDto(pr, reviewers, *reassignedReviewerId), nil
 }
 
@@ -185,8 +205,8 @@ func (svc *PullRequestService) convertPrToReassingDto(pr *model.PullRequest, rev
 			AuthorId:          pr.AuthorId,
 			Status:            pr.Status,
 			AssignedReviewers: reviewers,
-			CreatedAt:         &pr.CreatedAt,
-			MergedAt:          &pr.MergedAt,
+			CreatedAt:         pr.CreatedAt,
+			MergedAt:          pr.MergedAt,
 		},
 		ReplacedBy: replacedBy,
 	}

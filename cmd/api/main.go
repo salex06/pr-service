@@ -1,7 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
+	"github.com/salex06/pr-service/internal/config"
+	"github.com/salex06/pr-service/internal/database"
 	prRepo "github.com/salex06/pr-service/internal/repos/pr"
 	revsRepo "github.com/salex06/pr-service/internal/repos/reviewers"
 	teamRepo "github.com/salex06/pr-service/internal/repos/team"
@@ -11,10 +16,17 @@ import (
 )
 
 func main() {
-	var tr teamRepo.TeamRepository = teamRepo.NewInMemoryTeamRepository()
-	var ur userRepo.UserRepository = userRepo.NewInMemoryUserRepository()
-	var ar revsRepo.AssignedRevsRepository = revsRepo.NewInMemoryAssignedRevsRepository()
-	var pr prRepo.PullRequestRepository = prRepo.NewInMemoryPullRequestRepository()
+	dbConfig := config.Load()
+	db, err := database.NewDB(dbConfig)
+	if err != nil {
+		log.Println(fmt.Errorf("connecting to database failed: %w", err))
+		return
+	}
+
+	var tr teamRepo.TeamRepository = teamRepo.NewPostgresTeamRepository(db)
+	var ur userRepo.UserRepository = userRepo.NewPostgresUserRepository(db)
+	var ar revsRepo.AssignedRevsRepository = revsRepo.NewPostgresAssignedRevsRepository(db)
+	var pr prRepo.PullRequestRepository = prRepo.NewPostgresPullRequestRepository(db)
 
 	var ts *service.TeamService = service.NewTeamService(&tr, &ur)
 	var us *service.UserService = service.NewUserService(&ur, &ar, &pr)

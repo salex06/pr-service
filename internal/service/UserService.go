@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/salex06/pr-service/internal/dto"
 	"github.com/salex06/pr-service/internal/model"
 	prRepos "github.com/salex06/pr-service/internal/repos/pr"
@@ -23,12 +25,12 @@ func NewUserService(ur *userRepos.UserRepository, ar *revsRepos.AssignedRevsRepo
 }
 
 func (us *UserService) SetIsActive(userInfo *dto.UserShort) (*dto.User, *dto.ErrorResponse) {
-	if user := (*us.userRepository).GetUser(userInfo.UserId); user != nil {
+	if user, _ := (*us.userRepository).GetUser(context.Background(), userInfo.UserId); user != nil {
 		user.IsActive = userInfo.IsActive
-		updatedUser := (*us.userRepository).UpdateUser(user)
+		(*us.userRepository).UpdateUser(context.Background(), user)
 
 		//TODO: лучше сделать конвертер
-		return (*dto.User)(updatedUser), nil
+		return (*dto.User)(user), nil
 	}
 
 	return nil, &dto.ErrorResponse{
@@ -41,10 +43,10 @@ func (us *UserService) SetIsActive(userInfo *dto.UserShort) (*dto.User, *dto.Err
 }
 
 func (us *UserService) GetAssignedPRs(userId string) (*dto.AssignedPullRequests, *dto.ErrorResponse) {
-	if (*us.userRepository).UserExists(userId) {
-		prIds := (*us.assignedRevsRepository).GetAssignedPullRequestIds(userId)
+	if exists, _ := (*us.userRepository).UserExists(context.Background(), userId); exists {
+		prIds, _ := (*us.assignedRevsRepository).GetAssignedPullRequestIds(context.Background(), userId)
 
-		prs := (*us.pullRequestRepository).GetPullRequests(prIds)
+		prs, _ := (*us.pullRequestRepository).GetPullRequests(context.Background(), prIds)
 		return us.convertToAssignedPRs(userId, prs), nil
 	}
 

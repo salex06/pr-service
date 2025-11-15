@@ -1,6 +1,10 @@
 package pr
 
-import "github.com/salex06/pr-service/internal/model"
+import (
+	"context"
+
+	"github.com/salex06/pr-service/internal/model"
+)
 
 type InMemoryPullRequestRepository struct {
 	storage map[string]*model.PullRequest
@@ -12,29 +16,31 @@ func NewInMemoryPullRequestRepository() *InMemoryPullRequestRepository {
 	}
 }
 
-func (repo *InMemoryPullRequestRepository) GetPullRequest(prId string) *model.PullRequest {
-	return repo.storage[prId]
+func (repo *InMemoryPullRequestRepository) GetPullRequest(ctx context.Context, prId string) (*model.PullRequest, error) {
+	return repo.storage[prId], nil
 }
 
-func (repo *InMemoryPullRequestRepository) GetPullRequests(prIds []string) []*model.PullRequest {
+func (repo *InMemoryPullRequestRepository) GetPullRequests(ctx context.Context, prIds []string) ([]*model.PullRequest, error) {
 	prs := make([]*model.PullRequest, 0, len(prIds))
 	for _, v := range prIds {
-		prs = append(prs, repo.GetPullRequest(v))
+		if pr, err := repo.GetPullRequest(ctx, v); err == nil {
+			prs = append(prs, pr)
+		}
 	}
-	return prs
+	return prs, nil
 }
 
-func (repo *InMemoryPullRequestRepository) PullRequestExists(prId string) bool {
+func (repo *InMemoryPullRequestRepository) PullRequestExists(ctx context.Context, prId string) (bool, error) {
 	_, ok := repo.storage[prId]
-	return ok
+	return ok, nil
 }
 
-func (repo *InMemoryPullRequestRepository) SavePullRequest(pr *model.PullRequest) *model.PullRequest {
+func (repo *InMemoryPullRequestRepository) SavePullRequest(ctx context.Context, pr *model.PullRequest) error {
 	repo.storage[pr.PullRequestId] = pr
-	return repo.storage[pr.PullRequestId]
+	return nil
 }
 
-func (repo *InMemoryPullRequestRepository) UpdatePullRequest(pr *model.PullRequest) *model.PullRequest {
+func (repo *InMemoryPullRequestRepository) UpdatePullRequest(ctx context.Context, pr *model.PullRequest) error {
 	repo.storage[pr.PullRequestId] = pr
-	return repo.storage[pr.PullRequestId]
+	return nil
 }

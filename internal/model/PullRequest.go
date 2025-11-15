@@ -14,6 +14,6 @@ type PullRequest struct {
 	PullRequestName string
 	AuthorId        string
 	Status          PullRequestStatus
-	CreatedAt       time.Time
-	MergedAt        time.Time
+	CreatedAt       *time.Time
+	MergedAt        *time.Time
 }

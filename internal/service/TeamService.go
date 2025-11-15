@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -25,7 +26,7 @@ func NewTeamService(tr *teamRepos.TeamRepository, ur *userRepos.UserRepository) 
 func (ts *TeamService) AddTeam(req *dto.Team) (*dto.Team, *dto.ErrorResponse) {
 	teamName := req.TeamName
 
-	if (*ts.teamRepository).TeamExists(teamName) {
+	if exists, _ := (*ts.teamRepository).TeamExists(context.Background(), teamName); exists {
 		return nil, &dto.ErrorResponse{
 			Status: http.StatusBadRequest,
 			Error: map[string]string{
@@ -37,26 +38,30 @@ func (ts *TeamService) AddTeam(req *dto.Team) (*dto.Team, *dto.ErrorResponse) {
 
 	team := &model.Team{
 		TeamName: teamName,
-		Members:  make([]*model.User, 0),
 	}
+	(*ts.teamRepository).SaveTeam(context.Background(), team)
+
 	for _, member := range req.Members {
 		var savedUser *model.User
-		if userFromDb := (*ts.userRepository).GetUser(member.UserId); userFromDb != nil {
-			(*ts.teamRepository).DeleteMember(userFromDb.TeamName, userFromDb.UserId)
+		if userFromDb, _ := (*ts.userRepository).GetUser(context.Background(), member.UserId); userFromDb != nil {
+			// WARN: при создании команды для существующего человека обновляются его поля: teamName, username, isActive
 			userFromDb.TeamName = teamName
-			//TODO: также необходимо обновлять флаг состояния is_active
-			savedUser = (*ts.userRepository).UpdateUser(userFromDb)
-		} else {
-			savedUser = (*ts.userRepository).SaveUser(ts.convertTeamMemberToUser(member, teamName))
-		}
+			userFromDb.Username = member.Username
+			userFromDb.IsActive = member.IsActive
+			savedUser = userFromDb
 
-		team.Members = append(team.Members, savedUser)
+			(*ts.userRepository).UpdateUser(context.Background(), savedUser)
+		} else {
+			savedUser = ts.convertTeamMemberToUser(member, teamName)
+
+			(*ts.userRepository).SaveUser(context.Background(), savedUser)
+		}
 	}
 
-	(*ts.teamRepository).SaveTeam(team)
+	members, _ := (*ts.userRepository).GetTeamMembers(context.Background(), teamName)
 	return &dto.Team{
 		TeamName: team.TeamName,
-		Members:  ts.convertUsersToTeamMembers(team.Members),
+		Members:  ts.convertUsersToTeamMembers(members),
 	}, nil
 }
 
@@ -87,10 +92,11 @@ func (ts *TeamService) convertUserToTeamMember(user *model.User) *dto.TeamMember
 }
 
 func (ts *TeamService) GetTeam(teamId string) (*dto.Team, *dto.ErrorResponse) {
-	if team := (*ts.teamRepository).GetTeam(teamId); team != nil {
+	if team, _ := (*ts.teamRepository).GetTeam(context.Background(), teamId); team != nil {
+		members, _ := (*ts.userRepository).GetTeamMembers(context.Background(), team.TeamName)
 		return &dto.Team{
 			TeamName: team.TeamName,
-			Members:  ts.convertUsersToTeamMembers(team.Members),
+			Members:  ts.convertUsersToTeamMembers(members),
 		}, nil
 	}
 
