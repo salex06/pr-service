@@ -76,12 +76,14 @@ func (svc *PullRequestService) CreatePullRequest(req *dto.CreatePullRequest) (*d
 		}
 	}
 
+	createTime := time.Now()
 	pullRequest := &dto.PullRequest{
 		PullRequestID:     req.PullRequestID,
 		PullRequestName:   req.PullRequestName,
 		AuthorID:          req.AuthorID,
 		Status:            entity.OPEN,
 		AssignedReviewers: make([]string, 0, dto.MaxAssignedReviewers),
+		CreatedAt:         &createTime,
 	}
 	reviewerIds, err := (*svc.userRepo).ChooseReviewers(context.Background(), prAuthor)
 	if err != nil {

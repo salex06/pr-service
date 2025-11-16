@@ -1,0 +1,11 @@
+# IDE
+.vscode
+
+# Env
+.env
+
+# Other
+.gitignore
+log-directory/
+docker-compose.yaml
+migrations/

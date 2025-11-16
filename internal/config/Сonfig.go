@@ -25,8 +25,8 @@ type AppConfig struct {
 // на основе переменных окружения
 func LoadDBConfig() *DBConfig {
 	return &DBConfig{
-		DBHost:     getEnv("POSTGRES_HOST", "localhost"),
-		DBPort:     getEnv("POSTGRES_PORT", "5433"),
+		DBHost:     getEnv("POSTGRES_CONTAINER", "localhost"),
+		DBPort:     getEnv("POSTGRES_CONTAINER_PORT", "5433"),
 		DBUser:     getEnv("POSTGRES_USER", "pr-service-admin"),
 		DBPassword: getEnv("POSTGRES_PASSWORD", ""),
 		DBName:     getEnv("POSTGRES_DB", "postgres"),

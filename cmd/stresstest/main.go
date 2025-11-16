@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"math/rand/v2"
 	"net/http"
 	"os"
@@ -109,7 +110,7 @@ func main() {
 		`,
 	}
 
-	var requests []Request = []Request{
+	requests := []Request{
 		addTeamRequest, getTeamRequest,
 		setIsActiveRequest, getReviewRequest,
 		prCreateRequest, prMergeRequest, prReassignRequest,
@@ -146,5 +147,8 @@ func main() {
 	metrics.Close()
 
 	report := vegeta.NewTextReporter(&metrics)
-	report.Report(os.Stdout)
+	err := report.Report(os.Stdout)
+	if err != nil {
+		log.Printf("couldn't print stress test report: %s", err.Error())
+	}
 }

@@ -89,6 +89,10 @@ linters:
         (*strings\.Builder)\.Write
         (*os\.File)\.Close
         (*io\.Writer)\.Write
+    
+    gosec:
+      excludes:
+        - G404
 
 issues:
   max-issues-per-linter: 0
