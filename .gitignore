@@ -61,11 +61,6 @@ $RECYCLE.BIN/
 # Каталоги для хранения данных IDE
 .idea/
 
-# Файлы конфигурации окружения
-.env
-.env.local
-.env.*.local
-
 # Лог-файлы
 *.log
 logs/
